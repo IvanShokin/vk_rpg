@@ -1,17 +1,15 @@
-#from bot import User
 from random import randint
 from vk_api import VkApi
 from vk_api.longpoll import VkLongPoll, VkEventType
-from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from json import load, dump, dumps
 from os.path import isfile
+
 
 with open('config.json', 'r') as file:
     config = load(file)
 
-token = config.get('token')
 
-vk = VkApi(token=token)
+vk = VkApi(token=config.get('token'))
 longpoll = VkLongPoll(vk)
 
 
@@ -49,24 +47,34 @@ def new_mess(user_id, mes_for_user, list_words_color):
 def save(user_save):
     with open(f'{user_save.id_user}.json', "w") as file_user:
         user_dict = {
-            'health': user_save.health,
-            'power': user_save.power,
-            'mind': user_save.mind,
-            'inventory': user_save.inventory,
             'money': user_save.money,
-            'stamina': user_save.stamina
+            'bet': user_save.bet,
+            'box': user_save.box,
+            'true_answer': user_save.true_answer,
+            'condition': user_save.condition,
         }
         dump(user_dict, file_user)
 
 
-with open('requests_response.json', 'r') as file:
-    requests_response = load(file)
+for event in longpoll.listen():
 
-all_features = 'money', 'bet', 'box', 'true_answer', 'condition'
-health, power, mind, inventory, money, stamina = [dict_user.get(features) for features in all_features]
+    if event.type == VkEventType.MESSAGE_NEW and event.to_me:
 
-user = User(event.user_id, health, power, box, mind, inventory, money, stamina)
+        json_file_name = f'{event.user_id}.json'
 
-response_mess, keyboard = user.response(event.message)
-new_mess(event.user_id, response_mess, keyboard)
-save(user)
+        if isfile(json_file_name):
+            with open(json_file_name, "r") as user_file:
+                dict_user = load(user_file)
+
+            params = 'money', 'bet', 'box', 'true_answer', 'condition'
+            money, bet, box, true_answer, condition = [dict_user.get(param) for param in params]
+
+            user = User(event.user_id, money, bet, box, true_answer, condition)
+
+            response_mess, keyboard = user.response(event.message)
+            new_mess(event.user_id, response_mess, keyboard)
+            save(user)
+        elif event.text == 'Начать':
+            user = User(event.user_id)
+            new_mess(event.user_id, regulations, menu)
+            save(user)

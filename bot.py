@@ -7,47 +7,34 @@ menu = ['1 - Поиск игры по сети',
         '5 - Просмотреть колличество денег',
         '6 - Просмотреть фулл характеристику перса']
 
-objects = ['sword',
-           'shield',
-           'health potion',
-           'power potion',
-           'mind potion',
-           'knife']
+items = ['sword',
+         'shield',
+         'health potion',
+         'power potion',
+         'mind potion',
+         'knife']
 
 
 class Hero:
-    def __init__(self, health, power, mind, inventory, money, stamina):
+    def __init__(self, health, power, mind, inventory=['knife'], money=100, stamina=100):
         self.health = health
         self.power = power
         self.mind = mind
-        self.inventory = ['knife']
-        self.money = 100
-        self.stamina = 100
+        self.inventory = inventory
+        self.money = money
+        self.stamina = stamina
 
-    def farming(self, inventory, health, power, stamina):
-        self.add_object(inventory)
-        self.health_2(health)
-        self.power_2(power)
-        self.stamina_2(stamina)
+    def farming(self):
+        if self.stamina > 0:
+            self.add_item()
 
-    def add_object(self, inventory):
-        for i in objects:
-            random_object = randint(0, 4)
-            inventory.append(random_object)
-
-    def health_2(self, health):
-        health -= randint(1, 50)
-
-    def power_2(self, power):
-        power += randint(1, 50)
-
-    def stamina_2(self, stamina):
-        stamina -= randint(1, 20)
-
-
-# def sell(money):
+    def add_item(self):
+        new_item = items[randint(0, 5)]
+        self.inventory.append(new_item)
+        return new_item
 
 
 if __name__ == '__main__':
     hero = Hero(100, 50, 200)
-    hero.farming(45, 45, 870, 90)
+    hero.farming()
+    print(hero.inventory)
