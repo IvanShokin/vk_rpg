@@ -1,40 +1,84 @@
+import json
 from random import randint
+from os.path import isfile
 
-menu = ['1 - Поиск игры по сети',
-        '2 - Зафармить локу',
-        '3 - Продать вещи',
-        '4 - Просмотреть инвент',
-        '5 - Просмотреть колличество денег',
-        '6 - Просмотреть фулл характеристику перса']
-
-items = ['sword',
-         'shield',
-         'health potion',
-         'power potion',
-         'mind potion',
-         'knife']
+MENU = [('Фармить', 'positive'),
+        ('Просмотреть инвентарь', 'secondary'),
+        ('Просмотреть снаряжение', 'primary'),
+        ('PvP', 'negative'),
+        ('Магазин', 'primary'),
+        ('Гильдия', 'primary')]
 
 
 class Hero:
-    def __init__(self, health, power, mind, inventory=['knife'], money=100, stamina=100):
+    def __init__(self,
+                 health: int = 100,
+                 power: int = 10,
+                 intelligence: int = 10,
+                 energy: int = 100,
+                 money: int = 1000,
+                 inventory=None,
+                 condition: str = "menu"):
+        # TODO refactor
+        if inventory is None:
+            inventory = []
         self.health = health
         self.power = power
-        self.mind = mind
-        self.inventory = inventory
+        self.intelligence = intelligence
+        self.energy = energy
+
         self.money = money
-        self.stamina = stamina
+        self.inventory = inventory
 
-    def farming(self):
-        if self.stamina > 0:
-            self.add_item()
+        self.condition = condition
 
-    def add_item(self):
-        new_item = items[randint(0, 5)]
-        self.inventory.append(new_item)
-        return new_item
+    def menu(self, action):
+        pass
+
+    def farm(self):
+        pass
+
+    def pvp(self):
+        pass
+
+    def response(self, new_mess: str):
+        actions = {
+            'menu': self.menu,
+            'farm': self.farm,
+            'pvp': self.pvp,
+        }
+
+        actions.get(self.condition)(new_mess)
 
 
-if __name__ == '__main__':
-    hero = Hero(100, 50, 200)
-    hero.farming()
-    print(hero.inventory)
+class User:
+    def __init__(self, user_id: int):
+        self.user_id = user_id
+
+    def save_hero(self, hero: Hero):
+        with open(f'{self.user_id}.json', "w") as data:
+            user_dict = {
+                'health': hero.health,
+                'power': hero.power,
+                'intelligence': hero.intelligence,
+                'energy': hero.energy,
+                'money': hero.money,
+                'inventory': hero.inventory,
+            }
+            json.dump(user_dict, data)
+
+    def get_hero(self):
+        file_name = f'{self.user_id}.json'
+        if isfile(file_name):
+            with open(file_name, "r") as data:
+                data = json.load(data)
+                return Hero(
+                    health=data.get('health'),
+                    power=data.get('power'),
+                    intelligence=data.get('intelligence'),
+                    energy=data.get('energy'),
+                    money=data.get('money'),
+                    inventory=data.get('inventory'),
+                ), False
+        else:
+            return Hero(), True

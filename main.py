@@ -1,13 +1,13 @@
+import json
 from random import randint
+
 from vk_api import VkApi
 from vk_api.longpoll import VkLongPoll, VkEventType
-from json import load, dump, dumps
-from os.path import isfile
 
+from bot import User, MENU
 
 with open('config.json', 'r') as file:
-    config = load(file)
-
+    config = json.load(file)
 
 vk = VkApi(token=config.get('token'))
 longpoll = VkLongPoll(vk)
@@ -33,7 +33,7 @@ def get_keyboard(list_words):
         'one_time': True,
         'buttons': buttons,
     }
-    return str(dumps(dict_keyboard, ensure_ascii=False).encode('utf-8').decode('utf-8'))
+    return str(json.dumps(dict_keyboard, ensure_ascii=False).encode('utf-8').decode('utf-8'))
 
 
 def new_mess(user_id, mes_for_user, list_words_color):
@@ -44,37 +44,18 @@ def new_mess(user_id, mes_for_user, list_words_color):
                'keyboard': get_keyboard(list_words_color)})
 
 
-def save(user_save):
-    with open(f'{user_save.id_user}.json', "w") as file_user:
-        user_dict = {
-            'money': user_save.money,
-            'bet': user_save.bet,
-            'box': user_save.box,
-            'true_answer': user_save.true_answer,
-            'condition': user_save.condition,
-        }
-        dump(user_dict, file_user)
-
-
+print('Start bot')
 for event in longpoll.listen():
 
     if event.type == VkEventType.MESSAGE_NEW and event.to_me:
+        print(event.user_id, event.text)
 
-        json_file_name = f'{event.user_id}.json'
+        user = User(event.user_id)
+        hero, new_user = user.get_hero()
+        if not new_user:
+            response_mess, keyboard = hero.response(event.text)
+        else:
+            response_mess, keyboard = 'Добро пожаловать в пошаговую, ролевую MO-RPG. Выбери действие', MENU
 
-        if isfile(json_file_name):
-            with open(json_file_name, "r") as user_file:
-                dict_user = load(user_file)
-
-            params = 'money', 'bet', 'box', 'true_answer', 'condition'
-            money, bet, box, true_answer, condition = [dict_user.get(param) for param in params]
-
-            user = User(event.user_id, money, bet, box, true_answer, condition)
-
-            response_mess, keyboard = user.response(event.message)
-            new_mess(event.user_id, response_mess, keyboard)
-            save(user)
-        elif event.text == 'Начать':
-            user = User(event.user_id)
-            new_mess(event.user_id, regulations, menu)
-            save(user)
+        user.save_hero(hero)
+        new_mess(event.user_id, response_mess, keyboard)
